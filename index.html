@@ -1,259 +1,75 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Liu Yi | Portfolio</title>
+  <title>Yi Liu</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
 </head>
 <body>
 
-  <!-- Canvas for particle background -->
-  <canvas id="particles"></canvas>
+  <!-- Language toggle -->
+  <div class="lang-toggle">
+    <button class="lang-btn active" data-lang="en">EN</button>
+    <span class="lang-sep">|</span>
+    <button class="lang-btn" data-lang="zh">中文</button>
+  </div>
 
-  <!-- Cursor -->
-  <div class="cursor"></div>
-  <div class="cursor-follower"></div>
+  <!-- Main landing page -->
+  <div class="landing" id="landing">
 
-  <!-- Nav -->
-  <nav class="nav">
-    <div class="nav-logo">LY</div>
-    <ul class="nav-links">
-      <li><a href="#about">About</a></li>
-      <li><a href="#skills">Skills</a></li>
-      <li><a href="#projects">Projects</a></li>
-      <li><a href="#contact">Contact</a></li>
-    </ul>
-  </nav>
+    <!-- Rain canvas background -->
+    <canvas id="rain-canvas"></canvas>
 
-  <!-- Hero -->
-  <section id="hero" class="hero">
-    <div class="hero-content">
-      <div class="hero-tag reveal">Hello, World 👋</div>
-      <h1 class="hero-title reveal">
-        I'm <span class="gradient-text">Liu Yi</span>
-      </h1>
-      <p class="hero-subtitle reveal">
-        <span class="typing-text"></span><span class="cursor-blink">|</span>
-      </p>
-      <div class="hero-cta reveal">
-        <a href="#projects" class="btn btn-primary">View My Work</a>
-        <a href="#contact" class="btn btn-outline">Get In Touch</a>
+    <!-- Left: intro -->
+    <div class="left-panel">
+      <div class="greeting">
+        <p class="hi-text">Hi!</p>
+        <p class="name-text">I am <span class="name-highlight">Yi Liu</span>!</p>
       </div>
-    </div>
-    <div class="hero-scroll">
-      <span>Scroll</span>
-      <div class="scroll-line"></div>
-    </div>
-  </section>
-
-  <!-- About -->
-  <section id="about" class="section about">
-    <div class="container">
-      <div class="section-label reveal">01 — About</div>
-      <div class="about-grid">
-        <div class="about-text reveal">
-          <h2>Crafting Digital <span class="gradient-text">Experiences</span></h2>
-          <p>
-            I'm a passionate developer & designer who loves building beautiful,
-            functional things on the web. I bridge the gap between design and
-            engineering to create products people love.
-          </p>
-          <p>
-            When I'm not coding, I'm exploring new technologies, contributing to
-            open source, or diving into a good book on design theory.
-          </p>
-          <div class="about-stats">
-            <div class="stat">
-              <span class="stat-number" data-target="3">0</span><span>+</span>
-              <span class="stat-label">Years Exp.</span>
-            </div>
-            <div class="stat">
-              <span class="stat-number" data-target="20">0</span><span>+</span>
-              <span class="stat-label">Projects</span>
-            </div>
-            <div class="stat">
-              <span class="stat-number" data-target="10">0</span><span>+</span>
-              <span class="stat-label">Clients</span>
-            </div>
-          </div>
-        </div>
-        <div class="about-visual reveal">
-          <div class="about-card">
-            <div class="card-glow"></div>
-            <div class="avatar-ring">
-              <div class="avatar-placeholder">LY</div>
-            </div>
-            <div class="card-tags">
-              <span class="tag">React</span>
-              <span class="tag">Node.js</span>
-              <span class="tag">Python</span>
-              <span class="tag">Design</span>
-            </div>
-          </div>
+      <div class="photo-circle">
+        <div class="photo-ring"></div>
+        <div class="photo-inner">
+          <img src="photo.jpg" alt="Yi Liu" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
+          <div class="photo-placeholder">YL</div>
         </div>
       </div>
     </div>
-  </section>
 
-  <!-- Skills -->
-  <section id="skills" class="section skills">
-    <div class="container">
-      <div class="section-label reveal">02 — Skills</div>
-      <h2 class="reveal">What I <span class="gradient-text">Do</span></h2>
-      <div class="skills-grid">
-        <div class="skill-card reveal">
-          <div class="skill-icon">⚡</div>
-          <h3>Frontend Dev</h3>
-          <p>Building responsive, accessible UIs with React, Vue, and vanilla web tech.</p>
-          <div class="skill-bar-group">
-            <div class="skill-bar-item">
-              <span>React / Next.js</span>
-              <div class="skill-bar"><div class="skill-bar-fill" data-width="90"></div></div>
-            </div>
-            <div class="skill-bar-item">
-              <span>TypeScript</span>
-              <div class="skill-bar"><div class="skill-bar-fill" data-width="85"></div></div>
-            </div>
-            <div class="skill-bar-item">
-              <span>CSS / Tailwind</span>
-              <div class="skill-bar"><div class="skill-bar-fill" data-width="88"></div></div>
-            </div>
-          </div>
-        </div>
-        <div class="skill-card reveal">
-          <div class="skill-icon">🛠</div>
-          <h3>Backend Dev</h3>
-          <p>Designing scalable APIs and services with Node.js, Python, and databases.</p>
-          <div class="skill-bar-group">
-            <div class="skill-bar-item">
-              <span>Node.js / Express</span>
-              <div class="skill-bar"><div class="skill-bar-fill" data-width="80"></div></div>
-            </div>
-            <div class="skill-bar-item">
-              <span>Python / FastAPI</span>
-              <div class="skill-bar"><div class="skill-bar-fill" data-width="75"></div></div>
-            </div>
-            <div class="skill-bar-item">
-              <span>SQL / NoSQL</span>
-              <div class="skill-bar"><div class="skill-bar-fill" data-width="78"></div></div>
-            </div>
-          </div>
-        </div>
-        <div class="skill-card reveal">
-          <div class="skill-icon">🎨</div>
-          <h3>UI / UX Design</h3>
-          <p>Creating intuitive interfaces and delightful experiences in Figma.</p>
-          <div class="skill-bar-group">
-            <div class="skill-bar-item">
-              <span>Figma</span>
-              <div class="skill-bar"><div class="skill-bar-fill" data-width="85"></div></div>
-            </div>
-            <div class="skill-bar-item">
-              <span>Prototyping</span>
-              <div class="skill-bar"><div class="skill-bar-fill" data-width="80"></div></div>
-            </div>
-            <div class="skill-bar-item">
-              <span>Motion Design</span>
-              <div class="skill-bar"><div class="skill-bar-fill" data-width="70"></div></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Projects -->
-  <section id="projects" class="section projects">
-    <div class="container">
-      <div class="section-label reveal">03 — Projects</div>
-      <h2 class="reveal">Featured <span class="gradient-text">Work</span></h2>
-      <div class="projects-grid">
-
-        <div class="project-card reveal" data-index="01">
-          <div class="project-image">
-            <div class="project-placeholder">
-              <span>🚀</span>
-            </div>
-            <div class="project-overlay">
-              <a href="#" class="project-link">View →</a>
-            </div>
-          </div>
-          <div class="project-info">
-            <h3>Project Alpha</h3>
-            <p>A full-stack web application with real-time features and modern UI.</p>
-            <div class="project-tech">
-              <span>React</span><span>Node.js</span><span>WebSocket</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="project-card reveal" data-index="02">
-          <div class="project-image">
-            <div class="project-placeholder">
-              <span>🎯</span>
-            </div>
-            <div class="project-overlay">
-              <a href="#" class="project-link">View →</a>
-            </div>
-          </div>
-          <div class="project-info">
-            <h3>Project Beta</h3>
-            <p>An AI-powered data dashboard with beautiful visualizations.</p>
-            <div class="project-tech">
-              <span>Python</span><span>D3.js</span><span>FastAPI</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="project-card reveal" data-index="03">
-          <div class="project-image">
-            <div class="project-placeholder">
-              <span>🌐</span>
-            </div>
-            <div class="project-overlay">
-              <a href="#" class="project-link">View →</a>
-            </div>
-          </div>
-          <div class="project-info">
-            <h3>Project Gamma</h3>
-            <p>Open source design system used by thousands of developers.</p>
-            <div class="project-tech">
-              <span>TypeScript</span><span>Storybook</span><span>Figma</span>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </section>
-
-  <!-- Contact -->
-  <section id="contact" class="section contact">
-    <div class="container">
-      <div class="section-label reveal">04 — Contact</div>
-      <div class="contact-content reveal">
-        <h2>Let's <span class="gradient-text">Connect</span></h2>
-        <p>Have a project in mind or just want to chat? My inbox is always open.</p>
-        <a href="mailto:liuyi0314@example.com" class="btn btn-primary contact-btn">
-          Say Hello ✉️
+    <!-- Right: navigation sections -->
+    <div class="right-panel" id="right-panel">
+      <nav class="section-nav" id="section-nav">
+        <a class="nav-item" href="about.html" data-index="0">
+          <span class="nav-text" data-en="About" data-zh="关于">About</span>
         </a>
-        <div class="social-links">
-          <a href="https://github.com/liuyi0314" target="_blank" rel="noopener">GitHub</a>
-          <a href="#" target="_blank" rel="noopener">LinkedIn</a>
-          <a href="#" target="_blank" rel="noopener">Twitter</a>
-        </div>
-      </div>
-    </div>
-  </section>
+        <a class="nav-item" href="research.html" data-index="1">
+          <span class="nav-text" data-en="Research" data-zh="科研">Research</span>
+        </a>
+        <a class="nav-item" href="work.html" data-index="2">
+          <span class="nav-text" data-en="Work" data-zh="工作">Work</span>
+        </a>
+        <a class="nav-item" href="artwork.html" data-index="3">
+          <span class="nav-text" data-en="Art Work" data-zh="艺术">Art Work</span>
+        </a>
+        <a class="nav-item" href="education.html" data-index="4">
+          <span class="nav-text" data-en="Education" data-zh="教育">Education</span>
+        </a>
+        <a class="nav-item" href="contact.html" data-index="5">
+          <span class="nav-text" data-en="Contact" data-zh="联系">Contact</span>
+        </a>
+      </nav>
 
-  <!-- Footer -->
-  <footer class="footer">
-    <p>Designed & Built by Liu Yi · <span id="year"></span></p>
-  </footer>
+      <!-- Ripple area at bottom of right panel -->
+      <div class="ripple-area" id="ripple-area"></div>
+    </div>
+
+  </div>
+
+  <!-- Ink splash overlay for page transitions -->
+  <div class="ink-splash" id="ink-splash"></div>
 
   <script src="script.js"></script>
 </body>

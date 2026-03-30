@@ -1,217 +1,331 @@
-// ===== PARTICLES =====
+/* ============================================================
+   Yi Liu — Personal Website Script
+   Rain background + ink-drip nav interactions + page transition
+   ============================================================ */
+
+// ─── LANGUAGE TOGGLE ─────────────────────────────────────────
 (function () {
-  const canvas = document.getElementById('particles');
+  const btns = document.querySelectorAll('.lang-btn');
+  if (!btns.length) return;
+  let currentLang = 'en';
+
+  function applyLang(lang) {
+    currentLang = lang;
+    document.querySelectorAll('[data-en]').forEach(el => {
+      el.textContent = lang === 'zh' ? (el.dataset.zh || el.dataset.en) : el.dataset.en;
+    });
+    btns.forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+  }
+
+  btns.forEach(btn => btn.addEventListener('click', () => applyLang(btn.dataset.lang)));
+})();
+
+
+// ─── RAIN CANVAS ─────────────────────────────────────────────
+(function () {
+  const canvas = document.getElementById('rain-canvas');
+  if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  let W, H, particles = [];
+
+  let W, H;
+  const DROPS = [];
+  const DROP_COUNT = 80;
 
   function resize() {
-    W = canvas.width = window.innerWidth;
-    H = canvas.height = window.innerHeight;
+    W = canvas.width  = canvas.offsetWidth;
+    H = canvas.height = canvas.offsetHeight;
   }
-  window.addEventListener('resize', resize);
   resize();
+  window.addEventListener('resize', resize);
 
-  const COUNT = 80;
-  for (let i = 0; i < COUNT; i++) {
-    particles.push({
-      x: Math.random() * W,
-      y: Math.random() * H,
-      r: Math.random() * 1.5 + 0.3,
-      dx: (Math.random() - 0.5) * 0.4,
-      dy: (Math.random() - 0.5) * 0.4,
-      alpha: Math.random() * 0.5 + 0.1,
-    });
+  // Initialise drops
+  for (let i = 0; i < DROP_COUNT; i++) {
+    DROPS.push(makeDrop(true));
   }
 
-  function draw() {
+  function makeDrop(random) {
+    return {
+      x:     Math.random() * (W || window.innerWidth),
+      y:     random ? Math.random() * (H || window.innerHeight) : -20,
+      len:   18 + Math.random() * 28,   // streak length
+      speed: 3.5 + Math.random() * 5,
+      alpha: 0.18 + Math.random() * 0.32,
+      width: 0.7 + Math.random() * 0.8,
+    };
+  }
+
+  function drawDrop(d) {
+    ctx.save();
+    ctx.globalAlpha = d.alpha;
+    ctx.strokeStyle = '#6aaed6';
+    ctx.lineWidth   = d.width;
+    ctx.lineCap     = 'round';
+    ctx.beginPath();
+    ctx.moveTo(d.x, d.y);
+    ctx.lineTo(d.x, d.y + d.len);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function frame() {
     ctx.clearRect(0, 0, W, H);
-    particles.forEach(p => {
+
+    for (const d of DROPS) {
+      drawDrop(d);
+      d.y += d.speed;
+      if (d.y - d.len > H) Object.assign(d, makeDrop(false), { x: Math.random() * W });
+    }
+
+    requestAnimationFrame(frame);
+  }
+  frame();
+})();
+
+
+// ─── RIPPLE CANVAS ───────────────────────────────────────────
+(function () {
+  const area = document.getElementById('ripple-area');
+  if (!area) return;
+
+  const canvas = document.createElement('canvas');
+  canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;';
+  area.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+
+  let W, H;
+  const ripples = [];
+
+  function resize() {
+    W = canvas.width  = area.offsetWidth;
+    H = canvas.height = area.offsetHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  // Spawn ripples from rain hitting bottom
+  setInterval(() => {
+    ripples.push({
+      x:     (W || 400) * (0.05 + Math.random() * 0.9),
+      y:     H * (0.55 + Math.random() * 0.35),
+      r:     0,
+      maxR:  20 + Math.random() * 35,
+      alpha: 0.5 + Math.random() * 0.3,
+      speed: 0.5 + Math.random() * 0.8,
+    });
+  }, 180);
+
+  function frame() {
+    ctx.clearRect(0, 0, W, H);
+
+    for (let i = ripples.length - 1; i >= 0; i--) {
+      const rp = ripples[i];
+      ctx.save();
+      ctx.globalAlpha = rp.alpha * (1 - rp.r / rp.maxR);
+      ctx.strokeStyle = '#6aaed6';
+      ctx.lineWidth   = 0.9;
+
+      // Ellipse (perspective effect — wider than tall)
       ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(124,58,237,${p.alpha})`;
-      ctx.fill();
-      p.x += p.dx;
-      p.y += p.dy;
-      if (p.x < 0 || p.x > W) p.dx *= -1;
-      if (p.y < 0 || p.y > H) p.dy *= -1;
+      ctx.ellipse(rp.x, rp.y, rp.r * 1.9, rp.r * 0.7, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+
+      rp.r += rp.speed;
+      if (rp.r >= rp.maxR) ripples.splice(i, 1);
+    }
+
+    requestAnimationFrame(frame);
+  }
+  frame();
+})();
+
+
+// ─── NAV AUTO-CYCLE + HOVER INK DRIP ─────────────────────────
+(function () {
+  const nav   = document.getElementById('section-nav');
+  if (!nav) return;
+  const items = Array.from(nav.querySelectorAll('.nav-item'));
+
+  // ── Auto-cycle (sequential dark highlight) ──
+  let autoIdx    = 0;
+  let autoTimer  = null;
+  let hovering   = false;      // is mouse inside nav panel?
+
+  function startAuto() {
+    if (autoTimer) return;
+    autoTimer = setInterval(() => {
+      items.forEach(it => it.classList.remove('auto-active'));
+      items[autoIdx].classList.add('auto-active');
+      autoIdx = (autoIdx + 1) % items.length;
+    }, 900);
+  }
+
+  function stopAuto() {
+    clearInterval(autoTimer);
+    autoTimer = null;
+    items.forEach(it => it.classList.remove('auto-active'));
+  }
+
+  startAuto();
+
+  // ── Hover interaction ──
+  const rightPanel = document.getElementById('right-panel');
+  if (rightPanel) {
+    rightPanel.addEventListener('mouseenter', () => {
+      hovering = true;
+      stopAuto();
+      nav.classList.add('has-hover');
     });
 
-    // Draw connecting lines between close particles
-    for (let i = 0; i < particles.length; i++) {
-      for (let j = i + 1; j < particles.length; j++) {
-        const dx = particles[i].x - particles[j].x;
-        const dy = particles[i].y - particles[j].y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 120) {
+    rightPanel.addEventListener('mouseleave', () => {
+      hovering = false;
+      nav.classList.remove('has-hover');
+      items.forEach(it => {
+        it.classList.remove('hovered');
+        stopDrip(it);
+      });
+      startAuto();
+    });
+  }
+
+  items.forEach(item => {
+    item.addEventListener('mouseenter', () => {
+      items.forEach(it => { it.classList.remove('hovered'); stopDrip(it); });
+      item.classList.add('hovered');
+      startDrip(item);
+    });
+  });
+
+  // ── Ink drip per item ──
+  // We draw ink letters "melting" and dripping on a canvas overlay
+  const dripState = new WeakMap();
+
+  function startDrip(item) {
+    stopDrip(item);
+    const textEl  = item.querySelector('.nav-text');
+    const rect    = textEl.getBoundingClientRect();
+    const navRect = nav.getBoundingClientRect();
+
+    const canvas  = document.createElement('canvas');
+    canvas.classList.add('drip-canvas');
+
+    // Size canvas to cover from text top down to nav bottom + a bit more
+    const topOffset = rect.top - navRect.top;
+    const availH    = navRect.height - topOffset + 80;
+    canvas.width    = rect.width + 60;
+    canvas.height   = availH;
+    canvas.style.left   = (rect.left - navRect.left - 30) + 'px';
+    canvas.style.top    = topOffset + 'px';
+    canvas.style.width  = canvas.width + 'px';
+    canvas.style.height = canvas.height + 'px';
+
+    item.appendChild(canvas);
+    const ctx = canvas.getContext('2d');
+
+    // Drip particles that fall from the text
+    const drips = [];
+    const label = textEl.textContent.trim();
+
+    // Seed a few drip points along the text baseline
+    for (let i = 0; i < 8; i++) {
+      drips.push({
+        x:     30 + (i / 7) * rect.width,
+        y:     rect.height * 0.85,
+        vy:    1.2 + Math.random() * 2,
+        vx:    (Math.random() - 0.5) * 0.5,
+        r:     1.5 + Math.random() * 2.5,
+        alpha: 0.7 + Math.random() * 0.3,
+        trail: [],
+      });
+    }
+
+    let raf;
+    let alive = true;
+
+    function drawFrame() {
+      if (!alive) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Faint text echo
+      ctx.save();
+      ctx.font = `700 ${rect.height * 0.88}px 'Lora', serif`;
+      ctx.fillStyle = 'rgba(26,63,92,0.08)';
+      ctx.fillText(label, 30, rect.height * 0.88);
+      ctx.restore();
+
+      for (const d of drips) {
+        d.trail.push({ x: d.x, y: d.y });
+        if (d.trail.length > 18) d.trail.shift();
+
+        // Draw trail (ink streak)
+        if (d.trail.length > 1) {
+          ctx.save();
+          ctx.strokeStyle = '#1a3f5c';
+          ctx.lineWidth   = d.r * 0.9;
+          ctx.lineCap     = 'round';
+          ctx.lineJoin    = 'round';
+          ctx.globalAlpha = d.alpha * 0.55;
           ctx.beginPath();
-          ctx.moveTo(particles[i].x, particles[i].y);
-          ctx.lineTo(particles[j].x, particles[j].y);
-          ctx.strokeStyle = `rgba(124,58,237,${0.08 * (1 - dist / 120)})`;
-          ctx.lineWidth = 0.5;
+          ctx.moveTo(d.trail[0].x, d.trail[0].y);
+          for (const p of d.trail) ctx.lineTo(p.x, p.y);
           ctx.stroke();
+          ctx.restore();
+        }
+
+        // Draw droplet head
+        ctx.save();
+        ctx.globalAlpha = d.alpha;
+        ctx.fillStyle   = '#2a6496';
+        ctx.beginPath();
+        // Teardrop shape
+        ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        d.x += d.vx;
+        d.y += d.vy;
+        d.vy *= 1.015; // slight acceleration
+        if (d.y > canvas.height) {
+          // Reset to top once off screen
+          d.y = rect.height * 0.7 + Math.random() * rect.height * 0.3;
+          d.x = 30 + Math.random() * rect.width;
+          d.trail = [];
+          d.vy = 1.2 + Math.random() * 2;
         }
       }
+
+      raf = requestAnimationFrame(drawFrame);
     }
 
-    requestAnimationFrame(draw);
+    drawFrame();
+    dripState.set(item, { canvas, raf, alive: () => alive, stop: () => { alive = false; cancelAnimationFrame(raf); } });
   }
-  draw();
-})();
 
-// ===== CUSTOM CURSOR =====
-(function () {
-  const cursor = document.querySelector('.cursor');
-  const follower = document.querySelector('.cursor-follower');
-  let mouseX = 0, mouseY = 0;
-  let followerX = 0, followerY = 0;
-
-  document.addEventListener('mousemove', e => {
-    mouseX = e.clientX;
-    mouseY = e.clientY;
-    cursor.style.left = mouseX + 'px';
-    cursor.style.top = mouseY + 'px';
-  });
-
-  function animateFollower() {
-    followerX += (mouseX - followerX) * 0.12;
-    followerY += (mouseY - followerY) * 0.12;
-    follower.style.left = followerX + 'px';
-    follower.style.top = followerY + 'px';
-    requestAnimationFrame(animateFollower);
-  }
-  animateFollower();
-
-  document.querySelectorAll('a, button, .skill-card, .project-card').forEach(el => {
-    el.addEventListener('mouseenter', () => follower.classList.add('hover'));
-    el.addEventListener('mouseleave', () => follower.classList.remove('hover'));
-  });
-})();
-
-// ===== TYPING EFFECT =====
-(function () {
-  const phrases = [
-    'Full Stack Developer',
-    'UI / UX Designer',
-    'Open Source Contributor',
-    'Creative Problem Solver',
-  ];
-  const el = document.querySelector('.typing-text');
-  let phraseIdx = 0, charIdx = 0, deleting = false;
-
-  function type() {
-    const current = phrases[phraseIdx];
-    if (!deleting) {
-      el.textContent = current.slice(0, ++charIdx);
-      if (charIdx === current.length) {
-        deleting = true;
-        setTimeout(type, 1800);
-        return;
-      }
-      setTimeout(type, 80);
-    } else {
-      el.textContent = current.slice(0, --charIdx);
-      if (charIdx === 0) {
-        deleting = false;
-        phraseIdx = (phraseIdx + 1) % phrases.length;
-        setTimeout(type, 400);
-        return;
-      }
-      setTimeout(type, 40);
+  function stopDrip(item) {
+    const state = dripState.get(item);
+    if (state) {
+      state.stop();
+      state.canvas.remove();
+      dripState.delete(item);
     }
   }
-  type();
-})();
 
-// ===== SCROLL REVEAL =====
-(function () {
-  const els = document.querySelectorAll('.reveal');
-  const observer = new IntersectionObserver(
-    entries => {
-      entries.forEach((entry, i) => {
-        if (entry.isIntersecting) {
-          const delay = entry.target.dataset.delay || 0;
-          setTimeout(() => entry.target.classList.add('visible'), delay);
-          observer.unobserve(entry.target);
-        }
-      });
-    },
-    { threshold: 0.15 }
-  );
+  // ── Click → ink splash → navigate ──
+  items.forEach(item => {
+    item.addEventListener('click', e => {
+      e.preventDefault();
+      const href   = item.getAttribute('href');
+      const splash = document.getElementById('ink-splash');
+      if (!splash || !href || href === '#') return;
 
-  // Stagger children in grids
-  document.querySelectorAll('.skills-grid, .projects-grid').forEach(grid => {
-    grid.querySelectorAll('.reveal').forEach((child, i) => {
-      child.dataset.delay = i * 120;
-    });
-  });
+      const rect = item.getBoundingClientRect();
+      const cx   = ((rect.left + rect.right) / 2 / window.innerWidth  * 100).toFixed(1) + '%';
+      const cy   = ((rect.top  + rect.bottom) / 2 / window.innerHeight * 100).toFixed(1) + '%';
+      splash.style.setProperty('--cx', cx);
+      splash.style.setProperty('--cy', cy);
+      splash.classList.add('expanding');
 
-  els.forEach(el => observer.observe(el));
-})();
-
-// ===== SKILL BARS =====
-(function () {
-  const fills = document.querySelectorAll('.skill-bar-fill');
-  const observer = new IntersectionObserver(
-    entries => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          const el = entry.target;
-          el.style.width = el.dataset.width + '%';
-          observer.unobserve(el);
-        }
-      });
-    },
-    { threshold: 0.5 }
-  );
-  fills.forEach(f => observer.observe(f));
-})();
-
-// ===== COUNTER ANIMATION =====
-(function () {
-  const nums = document.querySelectorAll('.stat-number');
-  const observer = new IntersectionObserver(
-    entries => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          const el = entry.target;
-          const target = +el.dataset.target;
-          let current = 0;
-          const step = target / 50;
-          const timer = setInterval(() => {
-            current += step;
-            if (current >= target) {
-              el.textContent = target;
-              clearInterval(timer);
-            } else {
-              el.textContent = Math.floor(current);
-            }
-          }, 30);
-          observer.unobserve(el);
-        }
-      });
-    },
-    { threshold: 0.5 }
-  );
-  nums.forEach(n => observer.observe(n));
-})();
-
-// ===== SMOOTH NAV HIGHLIGHT =====
-(function () {
-  const sections = document.querySelectorAll('section[id]');
-  const navLinks = document.querySelectorAll('.nav-links a');
-
-  window.addEventListener('scroll', () => {
-    let current = '';
-    sections.forEach(s => {
-      if (window.scrollY >= s.offsetTop - 120) current = s.id;
-    });
-    navLinks.forEach(a => {
-      a.style.color = a.getAttribute('href') === '#' + current
-        ? 'var(--text)'
-        : '';
+      setTimeout(() => { window.location.href = href; }, 560);
     });
   });
 })();
-
-// ===== FOOTER YEAR =====
-document.getElementById('year').textContent = new Date().getFullYear();

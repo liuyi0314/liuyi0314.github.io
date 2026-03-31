@@ -11,28 +11,6 @@
 </head>
 <body>
 
-  <!-- SVG liquid filter (hidden) -->
-  <svg style="position:absolute;width:0;height:0;overflow:hidden;" aria-hidden="true">
-    <defs>
-      <filter id="liquid" x="-30%" y="-30%" width="160%" height="160%">
-        <feTurbulence
-          id="liq-turb"
-          type="turbulence"
-          baseFrequency="0 0"
-          numOctaves="3"
-          seed="4"
-          result="turb" />
-        <feDisplacementMap
-          id="liq-disp"
-          in="SourceGraphic"
-          in2="turb"
-          scale="0"
-          xChannelSelector="R"
-          yChannelSelector="G" />
-      </filter>
-    </defs>
-  </svg>
-
   <!-- Language toggle -->
   <div class="lang-toggle">
     <button class="lang-btn active" data-lang="en">EN</button>

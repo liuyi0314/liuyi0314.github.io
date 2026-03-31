@@ -1,6 +1,6 @@
 /* ============================================================
    Yi Liu — Personal Website Script
-   Liquid morph nav (auto-cycle + hover + touch) + page transition
+   Cloud/balloon nav: accumulate → all liquid → dissolve bottom-up
    ============================================================ */
 
 // ─── LANGUAGE TOGGLE ─────────────────────────────────────────
@@ -23,24 +23,30 @@
   if (!nav) return;
   const items = Array.from(nav.querySelectorAll('.nav-item'));
 
+  // ── Timing ──
+  const GROW_MS          = 1100;   // each item morphs into liquid
+  const ACTIVATE_GAP     = 480;    // ms between starting each item's grow
+  const HOLD_ALL_MS      = 900;    // pause when all items are liquid
+  const DISSOLVE_MS      = 750;    // each item dissolves
+  const DISSOLVE_GAP     = 320;    // ms between dissolving each item (bottom → top)
+  const RESTART_DELAY    = 700;    // pause before next cycle
+
   // ── Filter params ──
-  const TARGET_FREQ  = 0.022;
-  const TARGET_SCALE = 32;
-  const GROW_MS      = 1400;   // slow grow into liquid
-  const SHRINK_MS    = 600;    // return to round
-  const HOLD_MS      = 1200;   // hold liquid state per auto-cycle item
+  const TARGET_FREQ  = 0.021;
+  const TARGET_SCALE = 30;
+  const SHRINK_MS    = 500;
 
   // ── Clone one SVG filter per nav item ──
   const svgDefs  = document.querySelector('svg defs');
   const baseFilt = document.getElementById('liquid');
 
   items.forEach((item, i) => {
-    const f = baseFilt.cloneNode(true);
-    f.id    = `liquid-${i}`;
+    const f    = baseFilt.cloneNode(true);
+    f.id       = `liquid-${i}`;
     const turb = f.querySelector('feTurbulence');
     const disp = f.querySelector('feDisplacementMap');
-    turb.id = `turb-${i}`;
-    disp.id = `disp-${i}`;
+    turb.id    = `turb-${i}`;
+    disp.id    = `disp-${i}`;
     svgDefs.appendChild(f);
 
     item._turb     = turb;
@@ -61,7 +67,6 @@
     const fromFreq  = item._freq;
     const fromScale = item._scale;
     const t0        = performance.now();
-
     function step(now) {
       const raw = Math.min((now - t0) / duration, 1);
       const e   = easeInOut(raw);
@@ -84,50 +89,73 @@
     item.querySelector('.nav-text').style.filter = `url(#${item._filterId})`;
   }
   function clearFilter(item) {
-    item.querySelector('.nav-text').style.filter  = 'none';
-    item.querySelector('.nav-text').style.color   = '';
+    cancelAnimationFrame(item._raf);
+    const el = item.querySelector('.nav-text');
+    el.style.filter = 'none';
     item._turb.setAttribute('baseFrequency', '0 0');
     item._disp.setAttribute('scale', '0');
     item._freq  = 0;
     item._scale = 0;
   }
 
-  // ── Auto-cycle WITH liquid morph ──
-  let cycleIdx  = 0;
-  let hovering  = false;
+  // ── Cycle state ──
+  let hovering   = false;
   let cycleTimer = null;
+
+  function clearAllTimers() {
+    clearTimeout(cycleTimer);
+    cycleTimer = null;
+  }
+
+  // ── MAIN CYCLE ──
+  // Phase 1: activate items 0→5, each grows to liquid and STAYS
+  // Phase 2: hold briefly with all items liquid
+  // Phase 3: dissolve items 5→0, bottom to top, one by one
+  // Phase 4: restart
 
   function runCycle() {
     if (hovering) return;
+    let phase1Done = 0;
 
-    const item = items[cycleIdx];
-    items.forEach(it => { it.classList.remove('auto-active'); clearFilter(it); });
-    item.classList.add('auto-active');
-    applyFilter(item);
-
-    // Grow into liquid
-    animateFilter(item, TARGET_FREQ, TARGET_SCALE, GROW_MS, () => {
-      if (hovering) return;
-      // Hold, then shrink back
+    // Phase 1: staggered activation
+    items.forEach((item, i) => {
       cycleTimer = setTimeout(() => {
         if (hovering) return;
-        animateFilter(item, 0, 0, SHRINK_MS, () => {
+        item.classList.add('auto-active');
+        applyFilter(item);
+        animateFilter(item, TARGET_FREQ, TARGET_SCALE, GROW_MS, () => {
           if (hovering) return;
-          clearFilter(item);
-          item.classList.remove('auto-active');
-          cycleIdx = (cycleIdx + 1) % items.length;
-          cycleTimer = setTimeout(runCycle, 300);
+          phase1Done++;
+          // Once last item finishes growing, move to phase 2
+          if (phase1Done === items.length) {
+            cycleTimer = setTimeout(dissolvePhase, HOLD_ALL_MS);
+          }
         });
-      }, HOLD_MS);
+      }, i * ACTIVATE_GAP);
     });
   }
 
-  function stopCycle() {
-    clearTimeout(cycleTimer);
-    cycleTimer = null;
-    items.forEach(it => { it.classList.remove('auto-active'); });
+  function dissolvePhase() {
+    if (hovering) return;
+    // Dissolve from bottom (index 5) to top (index 0)
+    const reverseItems = [...items].reverse();
+    reverseItems.forEach((item, i) => {
+      cycleTimer = setTimeout(() => {
+        if (hovering) return;
+        animateFilter(item, 0, 0, DISSOLVE_MS, () => {
+          if (hovering) return;
+          clearFilter(item);
+          item.classList.remove('auto-active');
+          // After last one dissolves, restart cycle
+          if (i === reverseItems.length - 1) {
+            cycleTimer = setTimeout(runCycle, RESTART_DELAY);
+          }
+        });
+      }, i * DISSOLVE_GAP);
+    });
   }
 
+  // Start
   runCycle();
 
   // ── Desktop hover ──
@@ -135,30 +163,27 @@
   if (rightPanel) {
     rightPanel.addEventListener('mouseenter', () => {
       hovering = true;
-      stopCycle();
+      clearAllTimers();
       nav.classList.add('has-hover');
+      // Freeze whatever state items are in — don't reset them
     });
 
     rightPanel.addEventListener('mouseleave', () => {
       hovering = false;
       nav.classList.remove('has-hover');
+      // Clear all items and restart cleanly
       items.forEach(it => {
-        it.classList.remove('hovered');
-        cancelAnimationFrame(it._raf);
+        it.classList.remove('hovered', 'auto-active');
         animateFilter(it, 0, 0, SHRINK_MS, () => clearFilter(it));
       });
-      cycleIdx = 0;
-      cycleTimer = setTimeout(runCycle, 400);
+      cycleTimer = setTimeout(runCycle, SHRINK_MS + 200);
     });
   }
 
   items.forEach(item => {
     item.addEventListener('mouseenter', () => {
       items.forEach(other => {
-        if (other !== item) {
-          other.classList.remove('hovered');
-          animateFilter(other, 0, 0, SHRINK_MS, () => clearFilter(other));
-        }
+        if (other !== item) other.classList.remove('hovered');
       });
       item.classList.add('hovered');
       applyFilter(item);
@@ -172,20 +197,17 @@
       e.preventDefault();
       const href = item.getAttribute('href');
       if (!href || href === '#') return;
-
-      // Stop cycle, show liquid on tapped item
-      stopCycle();
+      clearAllTimers();
       hovering = true;
       items.forEach(it => { it.classList.remove('auto-active'); clearFilter(it); });
       applyFilter(item);
-
-      animateFilter(item, TARGET_FREQ, TARGET_SCALE, 900, () => {
+      animateFilter(item, TARGET_FREQ, TARGET_SCALE, 850, () => {
         doTransition(item, href);
       });
     }, { passive: false });
   });
 
-  // ── Click (desktop): ink splash → navigate ──
+  // ── Click → ink splash ──
   items.forEach(item => {
     item.addEventListener('click', e => {
       e.preventDefault();

@@ -10,7 +10,7 @@
   --purple-mid:   #9b7fc9;
   --white:        #f4f8fc;
   --white-pure:   #ffffff;
-  --font-round:   'Fredoka', 'Nunito', sans-serif;
+  --font-round:   'Paytone One', 'Fredoka', sans-serif;
   --font-serif:   'Lora', Georgia, serif;
   --font-sans:    'Inter', sans-serif;
 }
@@ -183,40 +183,46 @@ html, body {
   position: relative;
 }
 
-/* ── Default: balloon/cloud font, soft white-blue ── */
+/* ── Default: balloon font — white, soft, deflated-ish ── */
 .nav-text {
   font-family: var(--font-round);
   font-size: clamp(22px, 2.9vw, 46px);
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.72);
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.55);
+  -webkit-text-stroke: 1px rgba(160, 200, 235, 0.45);
+  paint-order: stroke fill;
   text-shadow:
-    0 1px 4px rgba(42, 100, 150, 0.18),
-    0 0 14px rgba(255, 255, 255, 0.3);
+    0 2px 6px rgba(42, 100, 150, 0.15);
   display: inline-block;
-  line-height: 1.25;
+  line-height: 1.3;
   white-space: nowrap;
-  will-change: filter, color;
-  letter-spacing: 0.02em;
-  transition: color 0.4s ease, text-shadow 0.4s ease;
+  will-change: filter, color, text-shadow;
+  letter-spacing: 0.01em;
+  transition: color 0.5s ease, text-shadow 0.5s ease, -webkit-text-stroke 0.5s ease;
 }
 
 .nav-row-1 .nav-text {
   font-size: clamp(26px, 3.5vw, 54px);
 }
 
-/* Active (auto-cycle or hover): bright white cloud glow */
+/* Active: fully inflated balloon — bright white + 3D layered shadow */
 .nav-item.auto-active .nav-text,
 .nav-item.hovered .nav-text {
-  color: rgba(255, 255, 255, 0.97);
+  color: rgba(255, 255, 255, 1);
+  -webkit-text-stroke: 1.5px rgba(140, 195, 230, 0.6);
   text-shadow:
-    0 2px 8px rgba(42, 100, 150, 0.28),
-    0 0 24px rgba(255, 255, 255, 0.65),
-    0 0 40px rgba(184, 216, 240, 0.4);
+    0 1px 0 rgba(180, 220, 245, 0.9),
+    0 2px 0 rgba(150, 200, 235, 0.7),
+    0 3px 0 rgba(120, 175, 220, 0.5),
+    0 4px 8px rgba(42, 100, 150, 0.35),
+    0 0 28px rgba(255, 255, 255, 0.55),
+    0 0 50px rgba(184, 216, 240, 0.3);
 }
 
-/* Non-hovered items dim further when a hover is active */
+/* Non-hovered items dim when hover is active */
 .section-nav.has-hover .nav-item:not(.hovered) .nav-text {
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.3);
+  -webkit-text-stroke: 1px rgba(160, 200, 235, 0.2);
   text-shadow: none;
 }
 

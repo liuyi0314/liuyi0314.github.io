@@ -10,6 +10,7 @@
   --purple-mid:   #9b7fc9;
   --white:        #f4f8fc;
   --white-pure:   #ffffff;
+  --font-round:   'Fredoka', 'Nunito', sans-serif;
   --font-serif:   'Lora', Georgia, serif;
   --font-sans:    'Inter', sans-serif;
 }
@@ -28,32 +29,26 @@ html, body {
   top: 22px; left: 28px;
   z-index: 100;
   display: flex; align-items: center; gap: 6px;
-  font-family: var(--font-sans);
-  font-size: 13px;
-  font-weight: 500;
 }
 .lang-btn {
   background: none; border: none; cursor: pointer;
   color: var(--blue-mid);
+  font-family: var(--font-sans);
   font-size: 13px; font-weight: 500;
   padding: 2px 4px;
   transition: color 0.2s;
-  font-family: var(--font-sans);
 }
 .lang-btn.active { color: var(--blue-dark); font-weight: 700; }
-.lang-sep { color: var(--blue-light); }
+.lang-sep { color: var(--blue-light); font-size: 13px; }
 
 /* ===== LANDING LAYOUT ===== */
 .landing {
   width: 100vw; height: 100vh;
   display: flex;
-  position: relative;
   overflow: hidden;
 }
 
-/* rain-canvas is now scoped inside .rain-ripple-zone */
-
-/* ===== LEFT PANEL ===== */
+/* ===== LEFT PANEL (unchanged) ===== */
 .left-panel {
   flex: 0 0 42%;
   display: flex;
@@ -65,9 +60,7 @@ html, body {
   z-index: 2;
 }
 
-.greeting {
-  margin-bottom: 36px;
-}
+.greeting { margin-bottom: 36px; }
 
 .hi-text {
   font-family: var(--font-serif);
@@ -111,7 +104,6 @@ html, body {
   position: absolute;
   inset: -8px;
   border-radius: 50%;
-  border: 1.5px solid var(--blue-light);
   animation: ring-rotate 12s linear infinite;
   background: conic-gradient(
     from 0deg,
@@ -124,9 +116,7 @@ html, body {
   mask: radial-gradient(farthest-side, transparent calc(100% - 2px), white calc(100% - 2px));
 }
 
-@keyframes ring-rotate {
-  to { transform: rotate(360deg); }
-}
+@keyframes ring-rotate { to { transform: rotate(360deg); } }
 
 .photo-inner {
   width: 100%; height: 100%;
@@ -134,7 +124,6 @@ html, body {
   overflow: hidden;
   background: linear-gradient(135deg, var(--blue-light) 0%, var(--purple-soft) 100%);
   display: flex; align-items: center; justify-content: center;
-  position: relative;
 }
 
 .photo-inner img {
@@ -157,22 +146,20 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: stretch;
+  justify-content: center;
   position: relative;
   z-index: 2;
   overflow: hidden;
 }
 
-/* Section nav — grid layout, vertically centered in its flex space */
+/* ===== SECTION NAV ===== */
 .section-nav {
-  flex: 1;                   /* takes all space above rain zone */
   display: flex;
   flex-direction: column;
-  justify-content: center;   /* vertically center the rows */
+  justify-content: center;
   align-items: center;
   gap: 0;
   width: 100%;
-  position: relative;
-  z-index: 3;
   padding: 0 24px;
 }
 
@@ -188,78 +175,42 @@ html, body {
 .nav-item {
   text-decoration: none;
   display: inline-block;
-  padding: 6px 0;
+  padding: 8px 4px;
   cursor: pointer;
   position: relative;
-  overflow: visible;
 }
 
+/* ── Default: round bubbly font, light blue ── */
 .nav-text {
-  font-family: var(--font-serif);
-  font-size: clamp(20px, 2.8vw, 44px);
-  font-weight: 700;
+  font-family: var(--font-round);
+  font-size: clamp(22px, 2.9vw, 46px);
+  font-weight: 600;
   color: var(--blue-light);
   display: inline-block;
-  position: relative;
-  transition: color 0.35s ease, font-size 0.2s ease;
-  letter-spacing: 0.01em;
   line-height: 1.25;
   white-space: nowrap;
+  /* liquid filter applied via JS, transition handled by JS animation */
+  will-change: filter, color;
 }
 
-/* Row 1 (About) slightly bigger */
 .nav-row-1 .nav-text {
-  font-size: clamp(24px, 3.4vw, 52px);
+  font-size: clamp(26px, 3.5vw, 54px);
+  font-weight: 700;
 }
 
-/* Auto-cycle active state */
+/* Auto-cycle: item turns solid mid-blue */
 .nav-item.auto-active .nav-text {
   color: var(--blue-dark);
 }
 
-/* Hover state */
+/* Hover parent flag: all non-hovered items go pale */
 .section-nav.has-hover .nav-item:not(.hovered) .nav-text {
   color: var(--blue-light);
 }
+
+/* Hovered item: ink color (filter animated via JS) */
 .nav-item.hovered .nav-text {
   color: var(--blue-ink);
-  font-size: clamp(22px, 3.1vw, 48px);
-}
-.nav-row-1 .nav-item.hovered .nav-text {
-  font-size: clamp(26px, 3.7vw, 56px);
-}
-
-/* Ink drip canvas per nav item */
-.nav-item canvas.drip-canvas {
-  position: absolute;
-  left: 0; top: 0;
-  pointer-events: none;
-  z-index: 4;
-}
-
-/* ── Rain + ripple zone — fixed height strip below nav ── */
-.rain-ripple-zone {
-  flex: none;
-  height: 200px;
-  width: 100%;
-  position: relative;
-  overflow: hidden;
-  border-top: 1px solid rgba(184, 216, 240, 0.3);
-}
-
-#rain-canvas {
-  position: absolute;
-  inset: 0;
-  width: 100%; height: 100%;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.ripple-area {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 2;
 }
 
 /* ===== INK SPLASH TRANSITION ===== */
@@ -269,7 +220,12 @@ html, body {
   z-index: 999;
   pointer-events: none;
   opacity: 0;
-  background: radial-gradient(circle at var(--cx, 50%) var(--cy, 50%), var(--blue-ink) 0%, var(--blue-mid) 45%, transparent 75%);
+  background: radial-gradient(
+    circle at var(--cx, 50%) var(--cy, 50%),
+    var(--blue-ink) 0%,
+    var(--blue-mid) 45%,
+    transparent 75%
+  );
   transform: scale(0);
   transform-origin: var(--cx, 50%) var(--cy, 50%);
 }
@@ -319,7 +275,7 @@ html.subpage-html, .subpage-html body {
 .back-btn:hover { color: var(--blue-dark); transform: translateX(-3px); }
 
 .subpage-title {
-  font-family: var(--font-serif);
+  font-family: var(--font-round);
   font-size: clamp(26px, 3.5vw, 44px);
   font-weight: 700;
   color: var(--blue-dark);
@@ -336,7 +292,6 @@ html.subpage-html, .subpage-html body {
   min-height: 60vh;
 }
 
-/* Coming soon placeholder */
 .coming-soon {
   text-align: center;
   animation: fade-up 0.7s ease both;
@@ -353,7 +308,7 @@ html.subpage-html, .subpage-html body {
 }
 
 .coming-soon h2 {
-  font-family: var(--font-serif);
+  font-family: var(--font-round);
   font-size: clamp(22px, 2.5vw, 34px);
   font-weight: 600;
   color: var(--blue-dark);
@@ -367,11 +322,9 @@ html.subpage-html, .subpage-html body {
   letter-spacing: 0.03em;
 }
 
-/* Watercolor-style decorative rule */
 .wc-rule {
   display: block;
-  width: 120px;
-  height: 3px;
+  width: 120px; height: 3px;
   margin: 24px auto 0;
   background: linear-gradient(90deg, transparent, var(--purple-soft), var(--blue-light), transparent);
   border-radius: 3px;
@@ -379,8 +332,6 @@ html.subpage-html, .subpage-html body {
 }
 
 /* ===== RESPONSIVE ===== */
-
-/* Tablet (iPad): tighten padding, keep left/right but adjust proportions */
 @media (min-width: 601px) and (max-width: 1024px) {
   .left-panel {
     flex: 0 0 38%;
@@ -390,10 +341,8 @@ html.subpage-html, .subpage-html body {
     width: clamp(110px, 16vw, 170px);
     height: clamp(110px, 16vw, 170px);
   }
-  .rain-ripple-zone { height: 160px; }
 }
 
-/* Mobile (phone): single column, centered */
 @media (max-width: 600px) {
   html, body { overflow: auto; }
 
@@ -411,27 +360,17 @@ html.subpage-html, .subpage-html body {
 
   .right-panel {
     flex: none; width: 100%;
-    min-height: 60vh;
+    min-height: 55vh;
+    justify-content: flex-start;
+    padding-top: 20px;
+    padding-bottom: 48px;
   }
 
-  .section-nav {
-    padding: 0 16px;
-    flex: none;
-    padding-top: 24px;
-    padding-bottom: 16px;
-  }
+  .section-nav { padding: 0 16px; }
 
-  .nav-text {
-    font-size: clamp(22px, 7vw, 36px);
-  }
-  .nav-row-1 .nav-text {
-    font-size: clamp(26px, 8vw, 40px);
-  }
-  .nav-row {
-    gap: clamp(14px, 5vw, 28px);
-  }
-
-  .rain-ripple-zone { height: 160px; }
+  .nav-text { font-size: clamp(24px, 7.5vw, 38px); }
+  .nav-row-1 .nav-text { font-size: clamp(28px, 9vw, 42px); }
+  .nav-row { gap: clamp(12px, 4vw, 24px); }
 
   .subpage-header { padding: 20px 24px 16px; }
   .subpage-content { padding: 48px 24px; }

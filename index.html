@@ -7,9 +7,31 @@
   <link rel="stylesheet" href="style.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
 </head>
 <body>
+
+  <!-- SVG liquid filter (hidden) -->
+  <svg style="position:absolute;width:0;height:0;overflow:hidden;" aria-hidden="true">
+    <defs>
+      <filter id="liquid" x="-30%" y="-30%" width="160%" height="160%">
+        <feTurbulence
+          id="liq-turb"
+          type="turbulence"
+          baseFrequency="0 0"
+          numOctaves="3"
+          seed="4"
+          result="turb" />
+        <feDisplacementMap
+          id="liq-disp"
+          in="SourceGraphic"
+          in2="turb"
+          scale="0"
+          xChannelSelector="R"
+          yChannelSelector="G" />
+      </filter>
+    </defs>
+  </svg>
 
   <!-- Language toggle -->
   <div class="lang-toggle">
@@ -21,7 +43,7 @@
   <!-- Main landing page -->
   <div class="landing" id="landing">
 
-    <!-- Left: intro -->
+    <!-- Left: intro (unchanged) -->
     <div class="left-panel">
       <div class="greeting">
         <p class="hi-text">Hi!</p>
@@ -39,7 +61,7 @@
     <!-- Right: navigation sections -->
     <div class="right-panel" id="right-panel">
       <nav class="section-nav" id="section-nav">
-        <!-- Row 1: About (centered) -->
+        <!-- Row 1: About -->
         <div class="nav-row nav-row-1">
           <a class="nav-item" href="about.html" data-index="0">
             <span class="nav-text" data-en="About" data-zh="关于">About</span>
@@ -67,12 +89,6 @@
           </a>
         </div>
       </nav>
-
-      <!-- Rain + ripple lives BELOW the nav rows -->
-      <div class="rain-ripple-zone" id="rain-ripple-zone">
-        <canvas id="rain-canvas"></canvas>
-        <div class="ripple-area" id="ripple-area"></div>
-      </div>
     </div>
 
   </div>

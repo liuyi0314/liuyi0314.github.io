@@ -1,16 +1,14 @@
 /* ============================================================
    Yi Liu — Personal Website Script
-   Rain background + ink-drip nav interactions + page transition
+   Liquid morph nav + page transition
    ============================================================ */
 
 // ─── LANGUAGE TOGGLE ─────────────────────────────────────────
 (function () {
   const btns = document.querySelectorAll('.lang-btn');
   if (!btns.length) return;
-  let currentLang = 'en';
 
   function applyLang(lang) {
-    currentLang = lang;
     document.querySelectorAll('[data-en]').forEach(el => {
       el.textContent = lang === 'zh' ? (el.dataset.zh || el.dataset.en) : el.dataset.en;
     });
@@ -21,136 +19,101 @@
 })();
 
 
-// ─── RAIN CANVAS ─────────────────────────────────────────────
-(function () {
-  const canvas = document.getElementById('rain-canvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
+// ─── LIQUID FILTER ANIMATION ─────────────────────────────────
+/*
+  Uses the SVG feTurbulence + feDisplacementMap filter defined in index.html.
+  On hover-in:  slowly ramp baseFrequency 0→target and scale 0→target  (liquid grows)
+  On hover-out: quickly snap back to 0 (or reverse smoothly)
 
-  let W, H;
-  const DROPS = [];
-  const DROP_COUNT = 60;
-
-  function resize() {
-    const zone = canvas.parentElement;
-    W = canvas.width  = zone ? zone.offsetWidth  : window.innerWidth;
-    H = canvas.height = zone ? zone.offsetHeight : 200;
-  }
-  resize();
-  window.addEventListener('resize', resize);
-
-  // Initialise drops
-  for (let i = 0; i < DROP_COUNT; i++) {
-    DROPS.push(makeDrop(true));
-  }
-
-  function makeDrop(random) {
-    return {
-      x:     Math.random() * (W || window.innerWidth),
-      y:     random ? Math.random() * (H || window.innerHeight) : -20,
-      len:   18 + Math.random() * 28,   // streak length
-      speed: 3.5 + Math.random() * 5,
-      alpha: 0.18 + Math.random() * 0.32,
-      width: 0.7 + Math.random() * 0.8,
-    };
-  }
-
-  function drawDrop(d) {
-    ctx.save();
-    ctx.globalAlpha = d.alpha;
-    ctx.strokeStyle = '#6aaed6';
-    ctx.lineWidth   = d.width;
-    ctx.lineCap     = 'round';
-    ctx.beginPath();
-    ctx.moveTo(d.x, d.y);
-    ctx.lineTo(d.x, d.y + d.len);
-    ctx.stroke();
-    ctx.restore();
-  }
-
-  function frame() {
-    ctx.clearRect(0, 0, W, H);
-
-    for (const d of DROPS) {
-      drawDrop(d);
-      d.y += d.speed;
-      if (d.y - d.len > H) Object.assign(d, makeDrop(false), { x: Math.random() * W });
-    }
-
-    requestAnimationFrame(frame);
-  }
-  frame();
-})();
-
-
-// ─── RIPPLE CANVAS ───────────────────────────────────────────
-(function () {
-  const area = document.getElementById('ripple-area');
-  if (!area) return;
-
-  const canvas = document.createElement('canvas');
-  canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;';
-  area.appendChild(canvas);
-  const ctx = canvas.getContext('2d');
-
-  let W, H;
-  const ripples = [];
-
-  function resize() {
-    W = canvas.width  = area.offsetWidth  || 400;
-    H = canvas.height = area.offsetHeight || 140;
-  }
-  resize();
-  window.addEventListener('resize', () => { resize(); });
-
-  // Spawn ripples from rain hitting bottom
-  setInterval(() => {
-    ripples.push({
-      x:     (W || 400) * (0.05 + Math.random() * 0.9),
-      y:     H * (0.55 + Math.random() * 0.35),
-      r:     0,
-      maxR:  20 + Math.random() * 35,
-      alpha: 0.5 + Math.random() * 0.3,
-      speed: 0.5 + Math.random() * 0.8,
-    });
-  }, 180);
-
-  function frame() {
-    ctx.clearRect(0, 0, W, H);
-
-    for (let i = ripples.length - 1; i >= 0; i--) {
-      const rp = ripples[i];
-      ctx.save();
-      ctx.globalAlpha = rp.alpha * (1 - rp.r / rp.maxR);
-      ctx.strokeStyle = '#6aaed6';
-      ctx.lineWidth   = 0.9;
-
-      // Ellipse (perspective effect — wider than tall)
-      ctx.beginPath();
-      ctx.ellipse(rp.x, rp.y, rp.r * 1.9, rp.r * 0.7, 0, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.restore();
-
-      rp.r += rp.speed;
-      if (rp.r >= rp.maxR) ripples.splice(i, 1);
-    }
-
-    requestAnimationFrame(frame);
-  }
-  frame();
-})();
-
-
-// ─── NAV AUTO-CYCLE + HOVER INK DRIP ─────────────────────────
+  Each nav-item gets its own filter instance via a clone so items don't
+  interfere with each other when multiple are animated.
+*/
 (function () {
   const nav   = document.getElementById('section-nav');
   if (!nav) return;
   const items = Array.from(nav.querySelectorAll('.nav-item'));
 
-  // ── Auto-cycle (sequential dark highlight) ──
-  let autoIdx    = 0;
-  let autoTimer  = null;
-  let hovering   = false;      // is mouse inside nav panel?
+  // SVG filter params
+  const TARGET_FREQ  = 0.018;   // how "turbulent" the liquid gets
+  const TARGET_SCALE = 28;      // displacement strength
+  const GROW_MS      = 1600;    // ms to reach full liquid (slow grow)
+  const SHRINK_MS    = 400;     // ms to return to round
+
+  // Inject per-item filter clones into the SVG defs
+  const svgDefs = document.querySelector('svg defs');
+  const baseTurb = document.getElementById('liq-turb');
+  const baseDisp = document.getElementById('liq-disp');
+
+  items.forEach((item, i) => {
+    const filterId = `liquid-${i}`;
+    const filter   = document.getElementById('liquid').cloneNode(true);
+    filter.id      = filterId;
+
+    const turb = filter.querySelector('feTurbulence');
+    const disp = filter.querySelector('feDisplacementMap');
+    turb.id = `turb-${i}`;
+    disp.id = `disp-${i}`;
+
+    svgDefs.appendChild(filter);
+
+    // Store refs on the element for easy access
+    item._turb    = turb;
+    item._disp    = disp;
+    item._filterId = filterId;
+    item._raf     = null;
+    item._freq    = 0;
+    item._scale   = 0;
+  });
+
+  // ── Easing ──
+  function easeInOut(t) {
+    return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+  }
+
+  function animateFilter(item, toFreq, toScale, duration, onDone) {
+    cancelAnimationFrame(item._raf);
+    const startFreq  = item._freq;
+    const startScale = item._scale;
+    const startTime  = performance.now();
+
+    function step(now) {
+      const raw = Math.min((now - startTime) / duration, 1);
+      const t   = easeInOut(raw);
+
+      item._freq  = startFreq  + (toFreq  - startFreq)  * t;
+      item._scale = startScale + (toScale - startScale) * t;
+
+      item._turb.setAttribute('baseFrequency', `${item._freq} ${item._freq * 0.6}`);
+      item._disp.setAttribute('scale', item._scale);
+
+      if (raw < 1) {
+        item._raf = requestAnimationFrame(step);
+      } else {
+        item._freq  = toFreq;
+        item._scale = toScale;
+        if (onDone) onDone();
+      }
+    }
+
+    item._raf = requestAnimationFrame(step);
+  }
+
+  function applyFilter(item) {
+    item.querySelector('.nav-text').style.filter = `url(#${item._filterId})`;
+  }
+
+  function clearFilter(item) {
+    item.querySelector('.nav-text').style.filter = 'none';
+    item._freq  = 0;
+    item._scale = 0;
+    item._turb.setAttribute('baseFrequency', '0 0');
+    item._disp.setAttribute('scale', '0');
+  }
+
+  // ── Auto-cycle ──
+  let autoIdx   = 0;
+  let autoTimer = null;
+  let hovering  = false;
 
   function startAuto() {
     if (autoTimer) return;
@@ -158,7 +121,7 @@
       items.forEach(it => it.classList.remove('auto-active'));
       items[autoIdx].classList.add('auto-active');
       autoIdx = (autoIdx + 1) % items.length;
-    }, 900);
+    }, 950);
   }
 
   function stopAuto() {
@@ -169,7 +132,7 @@
 
   startAuto();
 
-  // ── Hover interaction ──
+  // ── Mouse enter/leave the whole right panel ──
   const rightPanel = document.getElementById('right-panel');
   if (rightPanel) {
     rightPanel.addEventListener('mouseenter', () => {
@@ -183,131 +146,30 @@
       nav.classList.remove('has-hover');
       items.forEach(it => {
         it.classList.remove('hovered');
-        stopDrip(it);
+        // Quickly return to round
+        animateFilter(it, 0, 0, SHRINK_MS, () => clearFilter(it));
       });
       startAuto();
     });
   }
 
+  // ── Per-item hover ──
   items.forEach(item => {
     item.addEventListener('mouseenter', () => {
-      items.forEach(it => { it.classList.remove('hovered'); stopDrip(it); });
+      // Un-liquid all other items
+      items.forEach(other => {
+        if (other !== item) {
+          other.classList.remove('hovered');
+          animateFilter(other, 0, 0, SHRINK_MS, () => clearFilter(other));
+        }
+      });
+
       item.classList.add('hovered');
-      startDrip(item);
+      applyFilter(item);
+      // Slowly grow into liquid
+      animateFilter(item, TARGET_FREQ, TARGET_SCALE, GROW_MS);
     });
   });
-
-  // ── Ink drip per item ──
-  // We draw ink letters "melting" and dripping on a canvas overlay
-  const dripState = new WeakMap();
-
-  function startDrip(item) {
-    stopDrip(item);
-    const textEl  = item.querySelector('.nav-text');
-    const rect    = textEl.getBoundingClientRect();
-    const itemRect = item.getBoundingClientRect();
-
-    const canvas  = document.createElement('canvas');
-    canvas.classList.add('drip-canvas');
-
-    // Canvas covers the item area + extra below for drip travel
-    canvas.width    = rect.width + 60;
-    canvas.height   = rect.height + 120;
-    canvas.style.left   = '-30px';
-    canvas.style.top    = '0px';
-    canvas.style.width  = canvas.width + 'px';
-    canvas.style.height = canvas.height + 'px';
-
-    item.appendChild(canvas);
-    const ctx = canvas.getContext('2d');
-
-    // Drip particles that fall from the text
-    const drips = [];
-    const label = textEl.textContent.trim();
-
-    // Seed a few drip points along the text baseline
-    for (let i = 0; i < 8; i++) {
-      drips.push({
-        x:     30 + (i / 7) * rect.width,
-        y:     rect.height * 0.85,
-        vy:    1.2 + Math.random() * 2,
-        vx:    (Math.random() - 0.5) * 0.5,
-        r:     1.5 + Math.random() * 2.5,
-        alpha: 0.7 + Math.random() * 0.3,
-        trail: [],
-      });
-    }
-
-    let raf;
-    let alive = true;
-
-    function drawFrame() {
-      if (!alive) return;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Faint text echo
-      ctx.save();
-      ctx.font = `700 ${rect.height * 0.88}px 'Lora', serif`;
-      ctx.fillStyle = 'rgba(26,63,92,0.08)';
-      ctx.fillText(label, 30, rect.height * 0.88);
-      ctx.restore();
-
-      for (const d of drips) {
-        d.trail.push({ x: d.x, y: d.y });
-        if (d.trail.length > 18) d.trail.shift();
-
-        // Draw trail (ink streak)
-        if (d.trail.length > 1) {
-          ctx.save();
-          ctx.strokeStyle = '#1a3f5c';
-          ctx.lineWidth   = d.r * 0.9;
-          ctx.lineCap     = 'round';
-          ctx.lineJoin    = 'round';
-          ctx.globalAlpha = d.alpha * 0.55;
-          ctx.beginPath();
-          ctx.moveTo(d.trail[0].x, d.trail[0].y);
-          for (const p of d.trail) ctx.lineTo(p.x, p.y);
-          ctx.stroke();
-          ctx.restore();
-        }
-
-        // Draw droplet head
-        ctx.save();
-        ctx.globalAlpha = d.alpha;
-        ctx.fillStyle   = '#2a6496';
-        ctx.beginPath();
-        // Teardrop shape
-        ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-
-        d.x += d.vx;
-        d.y += d.vy;
-        d.vy *= 1.015; // slight acceleration
-        if (d.y > canvas.height) {
-          // Reset to top once off screen
-          d.y = rect.height * 0.7 + Math.random() * rect.height * 0.3;
-          d.x = 30 + Math.random() * rect.width;
-          d.trail = [];
-          d.vy = 1.2 + Math.random() * 2;
-        }
-      }
-
-      raf = requestAnimationFrame(drawFrame);
-    }
-
-    drawFrame();
-    dripState.set(item, { canvas, raf, alive: () => alive, stop: () => { alive = false; cancelAnimationFrame(raf); } });
-  }
-
-  function stopDrip(item) {
-    const state = dripState.get(item);
-    if (state) {
-      state.stop();
-      state.canvas.remove();
-      dripState.delete(item);
-    }
-  }
 
   // ── Click → ink splash → navigate ──
   items.forEach(item => {
@@ -318,13 +180,13 @@
       if (!splash || !href || href === '#') return;
 
       const rect = item.getBoundingClientRect();
-      const cx   = ((rect.left + rect.right) / 2 / window.innerWidth  * 100).toFixed(1) + '%';
+      const cx   = ((rect.left + rect.right)  / 2 / window.innerWidth  * 100).toFixed(1) + '%';
       const cy   = ((rect.top  + rect.bottom) / 2 / window.innerHeight * 100).toFixed(1) + '%';
       splash.style.setProperty('--cx', cx);
       splash.style.setProperty('--cy', cy);
       splash.classList.add('expanding');
 
-      setTimeout(() => { window.location.href = href; }, 560);
+      setTimeout(() => { window.location.href = href; }, 580);
     });
   });
 })();

@@ -29,11 +29,12 @@
 
   let W, H;
   const DROPS = [];
-  const DROP_COUNT = 80;
+  const DROP_COUNT = 60;
 
   function resize() {
-    W = canvas.width  = canvas.offsetWidth;
-    H = canvas.height = canvas.offsetHeight;
+    const zone = canvas.parentElement;
+    W = canvas.width  = zone ? zone.offsetWidth  : window.innerWidth;
+    H = canvas.height = zone ? zone.offsetHeight : 200;
   }
   resize();
   window.addEventListener('resize', resize);
@@ -96,11 +97,11 @@
   const ripples = [];
 
   function resize() {
-    W = canvas.width  = area.offsetWidth;
-    H = canvas.height = area.offsetHeight;
+    W = canvas.width  = area.offsetWidth  || 400;
+    H = canvas.height = area.offsetHeight || 140;
   }
   resize();
-  window.addEventListener('resize', resize);
+  window.addEventListener('resize', () => { resize(); });
 
   // Spawn ripples from rain hitting bottom
   setInterval(() => {
@@ -204,18 +205,16 @@
     stopDrip(item);
     const textEl  = item.querySelector('.nav-text');
     const rect    = textEl.getBoundingClientRect();
-    const navRect = nav.getBoundingClientRect();
+    const itemRect = item.getBoundingClientRect();
 
     const canvas  = document.createElement('canvas');
     canvas.classList.add('drip-canvas');
 
-    // Size canvas to cover from text top down to nav bottom + a bit more
-    const topOffset = rect.top - navRect.top;
-    const availH    = navRect.height - topOffset + 80;
+    // Canvas covers the item area + extra below for drip travel
     canvas.width    = rect.width + 60;
-    canvas.height   = availH;
-    canvas.style.left   = (rect.left - navRect.left - 30) + 'px';
-    canvas.style.top    = topOffset + 'px';
+    canvas.height   = rect.height + 120;
+    canvas.style.left   = '-30px';
+    canvas.style.top    = '0px';
     canvas.style.width  = canvas.width + 'px';
     canvas.style.height = canvas.height + 'px';
 

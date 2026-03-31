@@ -51,12 +51,7 @@ html, body {
   overflow: hidden;
 }
 
-#rain-canvas {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-}
+/* rain-canvas is now scoped inside .rain-ripple-zone */
 
 /* ===== LEFT PANEL ===== */
 .left-panel {
@@ -161,27 +156,39 @@ html, body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: flex-start;
+  justify-content: flex-start;
+  align-items: stretch;
   position: relative;
   z-index: 2;
   overflow: hidden;
+  padding-top: clamp(40px, 8vh, 100px);
 }
 
-/* Section nav */
+/* Section nav — grid layout */
 .section-nav {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 0;
-  padding: 0 0 0 12px;
+  width: 100%;
   position: relative;
   z-index: 3;
+  padding: 0 24px;
+}
+
+.nav-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: baseline;
+  gap: clamp(20px, 4vw, 60px);
+  width: 100%;
 }
 
 .nav-item {
   text-decoration: none;
-  display: block;
-  padding: 8px 0;
+  display: inline-block;
+  padding: 6px 0;
   cursor: pointer;
   position: relative;
   overflow: visible;
@@ -189,14 +196,20 @@ html, body {
 
 .nav-text {
   font-family: var(--font-serif);
-  font-size: clamp(26px, 3.8vw, 52px);
+  font-size: clamp(22px, 3.2vw, 46px);
   font-weight: 700;
   color: var(--blue-light);
   display: inline-block;
   position: relative;
   transition: color 0.35s ease, font-size 0.2s ease;
   letter-spacing: 0.01em;
-  line-height: 1.15;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+/* Row 1 (About) slightly bigger */
+.nav-row-1 .nav-text {
+  font-size: clamp(26px, 3.8vw, 54px);
 }
 
 /* Auto-cycle active state */
@@ -204,29 +217,47 @@ html, body {
   color: var(--blue-dark);
 }
 
-/* Hover state - only hovered item goes dark+bigger */
+/* Hover state */
 .section-nav.has-hover .nav-item:not(.hovered) .nav-text {
   color: var(--blue-light);
 }
 .nav-item.hovered .nav-text {
   color: var(--blue-ink);
-  font-size: clamp(29px, 4.2vw, 57px);
+  font-size: clamp(24px, 3.5vw, 50px);
+}
+.nav-row-1 .nav-item.hovered .nav-text {
+  font-size: clamp(28px, 4.1vw, 58px);
 }
 
 /* Ink drip canvas per nav item */
 .nav-item canvas.drip-canvas {
   position: absolute;
-  left: 0;
-  top: 0;
+  left: 0; top: 0;
   pointer-events: none;
   z-index: 4;
 }
 
-/* Ripple canvas at bottom of right panel */
+/* ── Rain + ripple zone (below nav rows) ── */
+.rain-ripple-zone {
+  flex: 1;
+  width: 100%;
+  position: relative;
+  min-height: 140px;
+  overflow: hidden;
+}
+
+#rain-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
 .ripple-area {
   position: absolute;
   bottom: 0; left: 0; right: 0;
-  height: 140px;
+  height: 100%;
   pointer-events: none;
   z-index: 2;
 }

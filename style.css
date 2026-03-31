@@ -48,14 +48,15 @@ html, body {
   overflow: hidden;
 }
 
-/* ===== LEFT PANEL (unchanged) ===== */
+/* ===== LEFT PANEL ===== */
 .left-panel {
   flex: 0 0 42%;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  align-items: flex-start;
-  padding: 60px 48px 60px 72px;
+  align-items: center;
+  text-align: center;
+  padding: 60px 40px;
   position: relative;
   z-index: 2;
 }
@@ -368,9 +369,11 @@ html.subpage-html, .subpage-html body {
 
   .section-nav { padding: 0 16px; }
 
-  .nav-text { font-size: clamp(24px, 7.5vw, 38px); }
-  .nav-row-1 .nav-text { font-size: clamp(28px, 9vw, 42px); }
-  .nav-row { gap: clamp(12px, 4vw, 24px); }
+  .nav-text { font-size: clamp(18px, 6vw, 32px); }
+  .nav-row-1 .nav-text { font-size: clamp(22px, 7.5vw, 36px); }
+  /* Row 3 has 3 items — extra tight */
+  .nav-row-3 .nav-text { font-size: clamp(15px, 5vw, 28px); }
+  .nav-row { gap: clamp(8px, 3vw, 18px); }
 
   .subpage-header { padding: 20px 24px 16px; }
   .subpage-content { padding: 48px 24px; }

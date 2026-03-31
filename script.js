@@ -1,6 +1,5 @@
 /* ============================================================
    Yi Liu — Personal Website Script
-   Balloon nav: scale-up cycle + page transition
    ============================================================ */
 
 // ─── LANGUAGE TOGGLE ─────────────────────────────────────────
@@ -22,73 +21,56 @@
   const nav = document.getElementById('section-nav');
   if (!nav) return;
   const items = Array.from(nav.querySelectorAll('.nav-item'));
+  if (!items.length) return;
 
-  // Timing
-  const ACTIVATE_GAP  = 420;   // ms between each item inflating
-  const HOLD_ALL_MS   = 800;   // hold when all are big
-  const DEFLATE_GAP   = 320;   // ms between each item deflating (last→first)
-  const RESTART_DELAY = 500;
+  const ACTIVATE_GAP = 350;  // ms between each item inflating
+  const HOLD_ALL_MS  = 700;  // pause when all inflated
+  const DEFLATE_GAP  = 280;  // ms between each item deflating (last→first)
+  const RESTART_MS   = 450;  // pause before restarting
 
-  let hovering  = false;
-  let timers    = [];
+  let hovering    = false;
+  let cycleTimer  = null;
+  let step        = 0;   // 0..(n-1) inflate, n..(2n-1) deflate, 2n restart
 
-  function clearTimers() {
-    timers.forEach(t => clearTimeout(t));
-    timers = [];
+  function clearCycle() {
+    clearTimeout(cycleTimer);
+    cycleTimer = null;
   }
 
-  function after(ms, fn) {
-    const t = setTimeout(fn, ms);
-    timers.push(t);
-    return t;
-  }
-
-  function runCycle() {
+  function tick() {
     if (hovering) return;
+    const n = items.length;
 
-    // Phase 1: inflate items 0 → 5 one by one, each stays
-    items.forEach((item, i) => {
-      after(i * ACTIVATE_GAP, () => {
-        if (hovering) return;
-        item.classList.add('auto-active');
+    if (step < n) {
+      // ── Phase 1: inflate items 0 → n-1 one by one ──
+      items[step].classList.add('auto-active');
+      step++;
+      const delay = (step === n) ? HOLD_ALL_MS : ACTIVATE_GAP;
+      cycleTimer = setTimeout(tick, delay);
 
-        // When the last one is done inflating, start hold then deflate
-        if (i === items.length - 1) {
-          after(i * ACTIVATE_GAP + 550 + HOLD_ALL_MS, () => {
-            if (hovering) return;
-            deflatePhase();
-          });
-        }
-      });
-    });
+    } else if (step < n * 2) {
+      // ── Phase 2: deflate items n-1 → 0 (bottom to top) ──
+      const idx = (n * 2 - 1) - step;   // n-1, n-2, … 0
+      items[idx].classList.remove('auto-active');
+      step++;
+      const delay = (step === n * 2) ? RESTART_MS : DEFLATE_GAP;
+      cycleTimer = setTimeout(tick, delay);
+
+    } else {
+      // ── Phase 3: restart ──
+      step = 0;
+      tick();
+    }
   }
 
-  function deflatePhase() {
-    // Phase 2: deflate items 5 → 0 one by one
-    [...items].reverse().forEach((item, i) => {
-      after(i * DEFLATE_GAP, () => {
-        if (hovering) return;
-        item.classList.remove('auto-active');
-
-        // After last one deflates, restart
-        if (i === items.length - 1) {
-          after(i * DEFLATE_GAP + 550 + RESTART_DELAY, () => {
-            if (hovering) return;
-            runCycle();
-          });
-        }
-      });
-    });
-  }
-
-  runCycle();
+  tick();
 
   // ── Desktop hover ──
   const rightPanel = document.getElementById('right-panel');
   if (rightPanel) {
     rightPanel.addEventListener('mouseenter', () => {
       hovering = true;
-      clearTimers();
+      clearCycle();
       nav.classList.add('has-hover');
       items.forEach(it => it.classList.remove('auto-active'));
     });
@@ -96,8 +78,9 @@
     rightPanel.addEventListener('mouseleave', () => {
       hovering = false;
       nav.classList.remove('has-hover');
-      items.forEach(it => it.classList.remove('hovered'));
-      after(RESTART_DELAY, runCycle);
+      items.forEach(it => it.classList.remove('hovered', 'auto-active'));
+      step = 0;
+      cycleTimer = setTimeout(tick, 300);
     });
 
     items.forEach(item => {
@@ -114,10 +97,10 @@
       e.preventDefault();
       const href = item.getAttribute('href');
       if (!href || href === '#') return;
-      clearTimers();
+      clearCycle();
       items.forEach(it => it.classList.remove('auto-active', 'hovered'));
       item.classList.add('auto-active');
-      after(300, () => doTransition(item, href));
+      setTimeout(() => doTransition(item, href), 320);
     }, { passive: false });
   });
 

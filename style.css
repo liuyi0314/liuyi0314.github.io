@@ -48,14 +48,15 @@ html, body {
   overflow: hidden;
 }
 
-/* ===== LEFT PANEL (unchanged) ===== */
+/* ===== LEFT PANEL ===== */
 .left-panel {
   flex: 0 0 42%;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  align-items: flex-start;
-  padding: 60px 48px 60px 72px;
+  align-items: center;
+  text-align: center;
+  padding: 60px 40px;
   position: relative;
   z-index: 2;
 }

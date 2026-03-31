@@ -21,9 +21,6 @@
   <!-- Main landing page -->
   <div class="landing" id="landing">
 
-    <!-- Rain canvas background -->
-    <canvas id="rain-canvas"></canvas>
-
     <!-- Left: intro -->
     <div class="left-panel">
       <div class="greeting">
@@ -42,28 +39,40 @@
     <!-- Right: navigation sections -->
     <div class="right-panel" id="right-panel">
       <nav class="section-nav" id="section-nav">
-        <a class="nav-item" href="about.html" data-index="0">
-          <span class="nav-text" data-en="About" data-zh="关于">About</span>
-        </a>
-        <a class="nav-item" href="research.html" data-index="1">
-          <span class="nav-text" data-en="Research" data-zh="科研">Research</span>
-        </a>
-        <a class="nav-item" href="work.html" data-index="2">
-          <span class="nav-text" data-en="Work" data-zh="工作">Work</span>
-        </a>
-        <a class="nav-item" href="artwork.html" data-index="3">
-          <span class="nav-text" data-en="Art Work" data-zh="艺术">Art Work</span>
-        </a>
-        <a class="nav-item" href="education.html" data-index="4">
-          <span class="nav-text" data-en="Education" data-zh="教育">Education</span>
-        </a>
-        <a class="nav-item" href="contact.html" data-index="5">
-          <span class="nav-text" data-en="Contact" data-zh="联系">Contact</span>
-        </a>
+        <!-- Row 1: About (centered) -->
+        <div class="nav-row nav-row-1">
+          <a class="nav-item" href="about.html" data-index="0">
+            <span class="nav-text" data-en="About" data-zh="关于">About</span>
+          </a>
+        </div>
+        <!-- Row 2: Research  Work -->
+        <div class="nav-row nav-row-2">
+          <a class="nav-item" href="research.html" data-index="1">
+            <span class="nav-text" data-en="Research" data-zh="科研">Research</span>
+          </a>
+          <a class="nav-item" href="work.html" data-index="2">
+            <span class="nav-text" data-en="Work" data-zh="工作">Work</span>
+          </a>
+        </div>
+        <!-- Row 3: Education  Art Work  Contact -->
+        <div class="nav-row nav-row-3">
+          <a class="nav-item" href="education.html" data-index="3">
+            <span class="nav-text" data-en="Education" data-zh="教育">Education</span>
+          </a>
+          <a class="nav-item" href="artwork.html" data-index="4">
+            <span class="nav-text" data-en="Art Work" data-zh="艺术">Art Work</span>
+          </a>
+          <a class="nav-item" href="contact.html" data-index="5">
+            <span class="nav-text" data-en="Contact" data-zh="联系">Contact</span>
+          </a>
+        </div>
       </nav>
 
-      <!-- Ripple area at bottom of right panel -->
-      <div class="ripple-area" id="ripple-area"></div>
+      <!-- Rain + ripple lives BELOW the nav rows -->
+      <div class="rain-ripple-zone" id="rain-ripple-zone">
+        <canvas id="rain-canvas"></canvas>
+        <div class="ripple-area" id="ripple-area"></div>
+      </div>
     </div>
 
   </div>
